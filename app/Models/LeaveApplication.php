@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LeaveApplication extends Model
 {
@@ -26,11 +26,11 @@ class LeaveApplication extends Model
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'end_date' => 'date',
-            'approved_at' => 'datetime',
-            'total_days' => 'decimal:2',
-        ];
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'approved_at' => 'datetime',
+        'total_days' => 'decimal:2',
+    ];
     }
 
     // Relationships
@@ -63,5 +63,22 @@ class LeaveApplication extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', 'cancelled');
+    }
+
+    // Helper method - check if leave has started
+    public function hasStarted(): bool
+    {
+        return $this->start_date->isPast();
+    }
+
+    // Helper method - check if can be cancelled
+    public function canBeCancelled(): bool
+    {
+        return $this->status === 'approved' && !$this->hasStarted();
     }
 }

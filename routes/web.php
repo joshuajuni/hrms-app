@@ -40,10 +40,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('leaves', LeaveApplicationController::class)->names('leaves');
     Route::post('/leaves/{leave}/approve', [LeaveApplicationController::class, 'approve'])
         ->name('leaves.approve')
-        ->middleware('role:admin,manager');
+        ->middleware('role:manager');
     Route::post('/leaves/{leave}/reject', [LeaveApplicationController::class, 'reject'])
         ->name('leaves.reject')
-        ->middleware('role:admin,manager');
+        ->middleware('role:manager');
+    Route::post('/leaves/{leave}/cancel', [LeaveApplicationController::class, 'cancel'])
+        ->name('leaves.cancel');
 
     // Attendance
     Route::resource('attendances', AttendanceController::class);

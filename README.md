@@ -20,47 +20,56 @@ A comprehensive web-based Human Resource Management System built with Laravel 12
 ### 📅 **Leave Management**
 - Apply for annual leave, sick leave, and emergency leave
 - Leave balance tracking (14 days annual, 14 days sick)
-- Manager approval workflow
+- Manager approval workflow (department-based)
+- Edit pending leave applications before approval
+- Cancel approved leaves (before leave start date)
 - Automatic leave calculation (excludes weekends & holidays)
 - Email notifications for all leave actions
+- Four leave statuses: Pending, Approved, Rejected, Cancelled
 
 ### ⏰ **Attendance System**
 - Daily attendance tracking
-- Check-in/check-out functionality
+- Check-in/check-out functionality (Web & Mobile API)
 - Automatic status determination (present/late/absent)
 - Late detection (after 9:00 AM)
 - Monthly attendance reports
 - Auto-generation for bulk periods
+- Integration with leave applications
 
 ### 🎉 **Events & Holidays**
-- Public holiday management
+- Public holiday management (Malaysia holidays included)
 - Company events calendar
-- Calendar view with FullCalendar
+- Interactive calendar view with FullCalendar
 - Holiday exclusion in leave calculations
+- View approved leaves in calendar (all employees)
 
 ### 🔐 **Role-Based Access Control**
-- **Admin**: Full system access, manage all employees and departments
-- **Manager**: Manage department employees, approve/reject leaves
-- **Employee**: Apply for leave, view own attendance, update profile
+- **Admin**: System administration, view all data (no leave approval rights)
+- **Manager**: Department management, approve/reject department leaves
+- **Employee**: Personal leave management, attendance tracking, profile updates
 
 ### 📧 **Email Notifications**
-- Leave application submitted (to employee)
+- Leave application submitted (to employee & manager)
 - Leave approval required (to manager)
-- Leave approved/rejected (to employee)
-- Beautiful HTML email templates
+- Leave approved (to employee)
+- Leave rejected (to employee)
+- Leave cancelled (to employee)
+- Beautiful HTML email templates with full details
 
 ### 📱 **RESTful API**
-- Authentication with Laravel Sanctum
-- Mobile-ready endpoints
-- Check-in/check-out via API
-- Leave application via API
-- Token-based security
+- Full-featured REST API for mobile applications
+- Token-based authentication (Laravel Sanctum)
+- Complete leave management (view, create, edit, delete, cancel)
+- Check-in/check-out functionality
+- Leave balance tracking
+- Approved leaves calendar endpoint
 
 ### 📊 **Reporting & Analytics**
 - Monthly attendance summary
-- Leave usage reports
+- Leave usage reports by employee
 - Department-wise statistics
-- Activity logging for audit trail
+- Activity logging for complete audit trail
+- Export-ready data structure
 
 ---
 
@@ -73,7 +82,7 @@ A comprehensive web-based Human Resource Management System built with Laravel 12
 - **Authentication**: Laravel Breeze + Sanctum
 - **Calendar**: FullCalendar.js
 - **Icons**: Bootstrap Icons
-- **Email**: Mailpit (for local testing)
+- **Email**: Mailpit (local testing), SMTP support
 
 ---
 
@@ -181,17 +190,17 @@ Visit: **http://localhost:8000**
 ### Admin Account
 - **Email**: admin@hrms.com
 - **Password**: password
-- **Access**: Full system control
+- **Access**: Full system administration (no leave approval rights)
 
 ### Manager Account
 - **Email**: manager@hrms.com
 - **Password**: password
-- **Access**: IT Department management
+- **Access**: IT Department management, approve/reject department leaves
 
 ### Employee Account
 - **Email**: employee@hrms.com
 - **Password**: password
-- **Access**: Personal leave and attendance
+- **Access**: Personal leave and attendance management
 
 ---
 
@@ -204,6 +213,7 @@ Visit: **http://localhost:8000**
 - See your leave balance (Annual & Sick leave)
 - View today's attendance status
 - Check upcoming events/holidays
+- Quick access to apply for leave
 
 #### 2. **Apply for Leave**
 1. Click **"Apply for Leave"** button on dashboard
@@ -213,13 +223,56 @@ Visit: **http://localhost:8000**
 5. Click **"Submit Application"**
 6. ✅ Email notification sent to you and your manager
 
-#### 3. **View Attendance**
+**Leave Calculation:**
+- Automatically excludes weekends (Saturday & Sunday)
+- Automatically excludes public holidays
+- Shows total working days required
+
+#### 3. **Manage Your Leave Applications**
+
+**View Leaves:**
+- Go to **Leave Applications** menu
+- See all your leave applications with status
+- Filter by status (Pending, Approved, Rejected, Cancelled)
+
+**Edit Pending Leave:**
+- Click **Edit** button on pending applications
+- Modify dates, leave type, or reason
+- Save changes (can edit until manager approves/rejects)
+
+**Delete Pending Leave:**
+- Click **Delete** button on pending applications
+- Confirm deletion
+- Application removed from system
+
+**Cancel Approved Leave:**
+- Click **Cancel** button on approved leaves (only if not started)
+- Confirm cancellation
+- Leave balance automatically restored
+- Attendance records removed
+- ✅ Email notification sent
+
+**Important Rules:**
+- ✅ Can edit: Only PENDING leaves
+- ✅ Can delete: Only PENDING leaves
+- ✅ Can cancel: Only APPROVED leaves (before start date)
+- ❌ Cannot edit: APPROVED or REJECTED leaves
+- ❌ Cannot cancel: APPROVED leaves after start date
+- ❌ Cannot modify: REJECTED leaves (must apply new)
+
+#### 4. **View Other Employees' Leaves (Calendar Only)**
+- Go to **Events** → **Calendar View**
+- See approved leaves of all employees
+- Helps plan team availability
+- Cannot see pending/rejected leaves of others
+
+#### 5. **View Attendance**
 1. Go to **Attendance** menu
 2. Filter by date to see specific records
 3. View check-in/check-out times
 4. See monthly attendance summary
 
-#### 4. **Update Profile**
+#### 6. **Update Profile**
 1. Click your name → **"My Profile"**
 2. Click **"Edit Profile"**
 3. Update personal information
@@ -230,30 +283,55 @@ Visit: **http://localhost:8000**
 
 ### 👔 For Managers
 
-#### 1. **Approve/Reject Leave**
+#### 1. **Approve/Reject Leave Applications**
+
+**View Department Leaves:**
 1. Go to **Leave Applications**
-2. Filter by "Pending" status
-3. Click **"View"** on any application
-4. Review details and reason
-5. Click **"Approve"** or **"Reject"**
-6. Add approval notes (optional for approve, required for reject)
-7. ✅ Email notification sent to employee
+2. See all leave applications from your department
+3. Filter by "Pending" to see awaiting approvals
+
+**Approve Leave:**
+1. Click **"View"** on a pending application
+2. Review employee details, dates, and reason
+3. Click **"Approve"** button
+4. Add optional approval notes
+5. ✅ System automatically:
+   - Deducts leave balance
+   - Creates attendance records (status: on_leave)
+   - Sends email to employee
+
+**Reject Leave:**
+1. Click **"View"** on a pending application
+2. Click **"Reject"** button
+3. **Must provide rejection reason** (required)
+4. ✅ Email sent to employee with reason
+
+**Important Notes:**
+- ✅ Can only approve/reject: Department employees
+- ✅ Can only approve/reject: PENDING leaves
+- ❌ Cannot edit: Leave details (dates, reason)
+- ❌ Cannot delete: Any leave applications
 
 #### 2. **View Department Attendance**
 1. Go to **Attendance**
-2. Select employee from dropdown
-3. Choose date range
-4. View attendance report
+2. See attendance for all department employees
+3. Filter by employee and date range
+4. Generate monthly reports
 
 #### 3. **Manage Department Employees**
 1. Go to **Employees**
 2. View all employees in your department
-3. Click employee name to view full profile
-4. See leave balance and attendance history
+3. Click employee name to view:
+   - Complete profile
+   - Leave balance
+   - Attendance history
+   - Leave application history
 
 ---
 
 ### 👨‍💼 For Admins
+
+**Admin Role:** System administration only, no leave approval rights
 
 #### 1. **Add New Employee**
 1. Go to **Employees** → **"Add Employee"**
@@ -268,12 +346,17 @@ Visit: **http://localhost:8000**
 1. Go to **Departments**
 2. Click **"Add Department"** to create new
 3. Enter department name, code, and description
-4. Click **"Create Department"**
-5. Edit/delete existing departments
+4. Set department status (Active/Inactive)
+5. Edit/view existing departments
+
+**Note:** Cannot delete departments with existing employees
 
 #### 3. **Add Events/Holidays**
 1. Go to **Events** → **"Add Event"**
-2. Select event type (Public Holiday, Company Holiday, Company Event)
+2. Select event type:
+   - **Public Holiday** (affects leave calculation)
+   - **Company Holiday**
+   - **Company Event**
 3. Enter title and description
 4. Set start and end dates
 5. Check "Affects Attendance" for holidays
@@ -284,15 +367,26 @@ Visit: **http://localhost:8000**
 1. Go to **Attendance**
 2. Click **"Generate Attendance"**
 3. Select date range
-4. Choose employee (or leave blank for all)
+4. Choose employee (or leave blank for all employees)
 5. Click **"Generate"**
-6. Records created with "absent" status (excludes weekends/holidays)
+6. System creates records with "absent" status
+7. Automatically excludes weekends and holidays
 
 #### 5. **View Attendance Reports**
 1. Go to **Attendance** → **"View Report"**
 2. Select month and year
-3. Choose employee (optional)
-4. See summary: Present, Late, Absent, On Leave
+3. Choose employee (optional for all employees)
+4. See comprehensive summary:
+   - Total Days
+   - Present
+   - Late
+   - Absent
+   - On Leave
+
+#### 6. **View All Leave Applications**
+- Access to view all leave applications (read-only)
+- Cannot approve/reject (not a manager)
+- Can view statistics and reports
 
 ---
 
@@ -307,21 +401,27 @@ Visit: **http://localhost:8000**
    - Open browser: http://localhost:8025
    - You'll see all emails sent by the application
 
-3. **Test Email Flow**
+3. **Test Leave Application Flow**
 ```
    Step 1: Login as Employee (employee@hrms.com)
    Step 2: Apply for leave
-   Step 3: Check Mailpit → See email to employee
-   Step 4: Check Mailpit → See email to manager
+   Step 3: Check Mailpit → See email to employee (confirmation)
+   Step 4: Check Mailpit → See email to manager (approval request)
    
    Step 5: Login as Manager (manager@hrms.com)
    Step 6: Approve the leave
    Step 7: Check Mailpit → See approval email to employee
+   
+   Step 8: Login as Employee
+   Step 9: Cancel the approved leave
+   Step 10: Check Mailpit → See cancellation email to employee
 ```
 
 ## 🔌 API Testing
 
-### 1. **Get Access Token**
+### Authentication
+
+#### 1. **Login and Get Token**
 ```http
 POST http://localhost:8000/api/login
 Content-Type: application/json
@@ -337,21 +437,43 @@ Content-Type: application/json
 {
     "message": "Login successful",
     "token": "1|abc123xyz...",
-    "user": {...},
-    "employee": {...}
+    "user": {
+        "id": 3,
+        "name": "Jane Employee",
+        "email": "employee@hrms.com",
+        "role": "employee"
+    },
+    "employee": {
+        "id": 3,
+        "employee_code": "EMP003",
+        "full_name": "Jane Employee",
+        "department": "IT",
+        "position": "Software Developer",
+        "photo": "http://localhost:8000/storage/employees/photo.jpg"
+    }
 }
 ```
 
-### 2. **Get Current User**
+#### 2. **Get Current User**
 ```http
 GET http://localhost:8000/api/me
-Authorization: Bearer 1|abc123xyz...
+Authorization: Bearer {your-token}
 ```
 
-### 3. **Check In (Mobile)**
+#### 3. **Logout**
+```http
+POST http://localhost:8000/api/logout
+Authorization: Bearer {your-token}
+```
+
+---
+
+### Attendance API
+
+#### 1. **Check In**
 ```http
 POST http://localhost:8000/api/attendances/check-in
-Authorization: Bearer 1|abc123xyz...
+Authorization: Bearer {your-token}
 Content-Type: application/json
 
 {
@@ -359,10 +481,24 @@ Content-Type: application/json
 }
 ```
 
-### 4. **Check Out (Mobile)**
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Checked in successfully at 08:45 AM",
+    "attendance": {
+        "id": 123,
+        "date": "2025-12-04",
+        "check_in": "08:45:00",
+        "status": "present"
+    }
+}
+```
+
+#### 2. **Check Out**
 ```http
 POST http://localhost:8000/api/attendances/check-out
-Authorization: Bearer 1|abc123xyz...
+Authorization: Bearer {your-token}
 Content-Type: application/json
 
 {
@@ -370,25 +506,236 @@ Content-Type: application/json
 }
 ```
 
-### 5. **Apply for Leave (Mobile)**
+#### 3. **Get Today's Attendance**
+```http
+GET http://localhost:8000/api/attendances/today
+Authorization: Bearer {your-token}
+```
+
+**Response:**
+```json
+{
+    "attendance": {
+        "id": 123,
+        "date": "2025-12-04",
+        "check_in": "08:45:00",
+        "check_out": "17:30:00",
+        "status": "present",
+        "notes": null
+    },
+    "can_check_in": false,
+    "can_check_out": false
+}
+```
+
+#### 4. **Get Attendance History**
+```http
+GET http://localhost:8000/api/attendances?month=12&year=2025
+Authorization: Bearer {your-token}
+```
+
+---
+
+### Leave Management API
+
+#### 1. **Get Leave Applications**
+```http
+GET http://localhost:8000/api/leaves
+Authorization: Bearer {your-token}
+```
+
+Optional filters:
+```http
+GET http://localhost:8000/api/leaves?status=pending
+```
+
+**Response:**
+```json
+{
+    "leaves": [
+        {
+            "id": 1,
+            "leave_type": {
+                "id": 1,
+                "name": "Annual Leave",
+                "code": "AL"
+            },
+            "start_date": "2025-12-20",
+            "end_date": "2025-12-22",
+            "total_days": 3,
+            "reason": "Family vacation",
+            "status": "pending",
+            "approved_at": null,
+            "approval_notes": null,
+            "created_at": "2025-12-04 10:30:00",
+            "can_edit": true,
+            "can_delete": true,
+            "can_cancel": false
+        }
+    ]
+}
+```
+
+#### 2. **View Single Leave**
+```http
+GET http://localhost:8000/api/leaves/1
+Authorization: Bearer {your-token}
+```
+
+#### 3. **Apply for Leave**
 ```http
 POST http://localhost:8000/api/leaves
-Authorization: Bearer 1|abc123xyz...
+Authorization: Bearer {your-token}
 Content-Type: application/json
 
 {
     "leave_type_id": 1,
-    "start_date": "2025-12-10",
-    "end_date": "2025-12-12",
-    "reason": "Personal matters"
+    "start_date": "2025-12-20",
+    "end_date": "2025-12-22",
+    "reason": "Family vacation"
 }
 ```
 
-### 6. **Get Leave Balance**
+**Response:**
+```json
+{
+    "message": "Leave application submitted successfully. Email notification sent.",
+    "leave": {
+        "id": 15,
+        "status": "pending",
+        "total_days": 3,
+        "start_date": "2025-12-20",
+        "end_date": "2025-12-22"
+    }
+}
+```
+
+#### 4. **Edit Leave (Pending Only)**
+```http
+PUT http://localhost:8000/api/leaves/1
+Authorization: Bearer {your-token}
+Content-Type: application/json
+
+{
+    "leave_type_id": 1,
+    "start_date": "2025-12-21",
+    "end_date": "2025-12-23",
+    "reason": "Updated: Extended vacation"
+}
+```
+
+#### 5. **Delete Leave (Pending Only)**
+```http
+DELETE http://localhost:8000/api/leaves/1
+Authorization: Bearer {your-token}
+```
+
+**Response:**
+```json
+{
+    "message": "Leave application deleted successfully."
+}
+```
+
+#### 6. **Cancel Approved Leave (Not Started)**
+```http
+POST http://localhost:8000/api/leaves/2/cancel
+Authorization: Bearer {your-token}
+```
+
+**Response (Success):**
+```json
+{
+    "message": "Leave application cancelled successfully. Leave balance restored.",
+    "leave": {
+        "id": 2,
+        "status": "cancelled",
+        "restored_days": 3
+    }
+}
+```
+
+**Response (Error - Already Started):**
+```json
+{
+    "message": "This leave cannot be cancelled. Either it has already started or it is not approved.",
+    "status": "approved",
+    "has_started": true
+}
+```
+
+#### 7. **Get Leave Types**
+```http
+GET http://localhost:8000/api/leave-types
+Authorization: Bearer {your-token}
+```
+
+#### 8. **Get Leave Balance**
 ```http
 GET http://localhost:8000/api/leave-balance
-Authorization: Bearer 1|abc123xyz...
+Authorization: Bearer {your-token}
 ```
+
+**Response:**
+```json
+{
+    "annual_leave_balance": 11.00,
+    "sick_leave_balance": 14.00,
+    "total_leave_balance": 25.00
+}
+```
+
+#### 9. **Get Approved Leaves Calendar (All Employees)**
+```http
+GET http://localhost:8000/api/leaves/calendar/approved
+Authorization: Bearer {your-token}
+```
+
+Optional date filter:
+```http
+GET http://localhost:8000/api/leaves/calendar/approved?start_date=2025-12-01&end_date=2025-12-31
+```
+
+**Response:**
+```json
+{
+    "leaves": [
+        {
+            "id": 5,
+            "employee": {
+                "id": 2,
+                "full_name": "John Manager",
+                "department": "IT"
+            },
+            "leave_type": {
+                "name": "Annual Leave",
+                "code": "AL"
+            },
+            "start_date": "2025-12-15",
+            "end_date": "2025-12-17",
+            "total_days": 3
+        }
+    ]
+}
+```
+
+---
+
+### Employee API
+
+#### 1. **List Employees**
+```http
+GET http://localhost:8000/api/employees
+Authorization: Bearer {your-token}
+```
+
+#### 2. **Get Employee Details**
+```http
+GET http://localhost:8000/api/employees/3
+Authorization: Bearer {your-token}
+```
+
+---
 
 **Use Postman or Thunder Client (VS Code Extension) for API testing.**
 
@@ -398,37 +745,39 @@ Authorization: Bearer 1|abc123xyz...
 
 ### Tables (11 Total)
 
-1. **users** - User accounts
+1. **users** - User accounts with authentication
 2. **roles** - User roles (Admin, Manager, Employee)
-3. **employees** - Employee profiles
+3. **employees** - Complete employee profiles
 4. **departments** - Company departments
-5. **leave_types** - Types of leave
-6. **leave_applications** - Leave requests
+5. **leave_types** - Types of leave (Annual, Sick, Emergency)
+6. **leave_applications** - Leave requests with 4 statuses
 7. **attendances** - Daily attendance records
 8. **event_types** - Event categories
-9. **events** - Holidays and events
-10. **activity_logs** - Audit trail
+9. **events** - Holidays and company events
+10. **activity_logs** - Complete audit trail
 11. **notifications** - System notifications
 
 ### Key Relationships
 
 - User → Employee (One-to-One)
+- User → Role (Many-to-One)
 - Employee → Department (Many-to-One)
 - Employee → Leave Applications (One-to-Many)
 - Employee → Attendances (One-to-Many)
 - Leave Application → Leave Type (Many-to-One)
+- Leave Application → Approver (Many-to-One, Employee)
 
 ---
 
 ## 📊 System Requirements Checklist
 
 - ✅ Database management and manipulation (11 tables, relationships, CRUD)
-- ✅ File/image upload (Employee photos with validation)
-- ✅ Email notifications (Leave applications, approvals, rejections)
-- ✅ Logging (Activity logs for audit trail)
-- ✅ Clean, responsive UI (Bootstrap 5 with custom styling)
-- ✅ RESTful API (Sanctum authentication, mobile-ready)
-- ✅ Role-based access control (Admin, Manager, Employee)
+- ✅ File/image upload (Employee photos with validation, max 5MB)
+- ✅ Email notifications (Leave applications, approvals, rejections, cancellations)
+- ✅ Logging (Activity logs for complete audit trail)
+- ✅ Clean, responsive UI (Bootstrap 5 with custom gradient styling)
+- ✅ RESTful API (Sanctum authentication, mobile-ready, full CRUD)
+- ✅ Role-based access control (Admin, Manager, Employee with proper policies)
 
 ---
 
@@ -439,157 +788,274 @@ hrms-app/
 │   ├── Http/
 │   │   ├── Controllers/
 │   │   │   ├── Api/              # API Controllers
+│   │   │   │   ├── AuthController.php
+│   │   │   │   ├── AttendanceController.php
+│   │   │   │   ├── EmployeeController.php
+│   │   │   │   └── LeaveApplicationController.php
 │   │   │   ├── DashboardController.php
 │   │   │   ├── EmployeeController.php
+│   │   │   ├── DepartmentController.php
 │   │   │   ├── LeaveApplicationController.php
-│   │   │   └── ...
-│   │   ├── Middleware/           # Custom middleware
-│   │   └── Policies/             # Authorization policies
-│   ├── Models/                   # Eloquent models
-│   ├── Services/                 # Business logic
-│   ├── Helpers/                  # Helper classes
-│   └── Notifications/            # Email notifications
+│   │   │   ├── AttendanceController.php
+│   │   │   ├── EventController.php
+│   │   │   └── ProfileController.php
+│   │   ├── Middleware/
+│   │   │   ├── RoleMiddleware.php
+│   │   │   └── CheckEmployeeProfile.php
+│   │   └── Policies/
+│   │       ├── EmployeePolicy.php
+│   │       ├── LeaveApplicationPolicy.php
+│   │       ├── AttendancePolicy.php
+│   │       ├── DepartmentPolicy.php
+│   │       └── EventPolicy.php
+│   ├── Models/
+│   │   ├── User.php
+│   │   ├── Role.php
+│   │   ├── Employee.php
+│   │   ├── Department.php
+│   │   ├── LeaveType.php
+│   │   ├── LeaveApplication.php
+│   │   ├── Attendance.php
+│   │   ├── Event.php
+│   │   ├── EventType.php
+│   │   └── ActivityLog.php
+│   ├── Services/
+│   │   ├── LeaveService.php
+│   │   └── AttendanceService.php
+│   ├── Helpers/
+│   │   └── ActivityLogger.php
+│   └── Notifications/
+│       └── LeaveApplicationNotification.php
 ├── database/
-│   ├── migrations/               # Database migrations
-│   └── seeders/                  # Database seeders
+│   ├── migrations/
+│   └── seeders/
 ├── resources/
-│   └── views/                    # Blade templates
+│   └── views/
+│       ├── layouts/
+│       ├── dashboard/
+│       ├── employees/
+│       ├── departments/
+│       ├── leaves/
+│       ├── attendances/
+│       ├── events/
+│       └── profile/
 ├── routes/
-│   ├── web.php                   # Web routes
-│   └── api.php                   # API routes
+│   ├── web.php
+│   └── api.php
 └── storage/
-    └── app/public/employees/     # Employee photos
+    └── app/public/employees/
 ```
 
 ---
 
 ## 🔒 Security Features
 
-- ✅ CSRF Protection
+- ✅ CSRF Protection (all web forms)
 - ✅ SQL Injection Prevention (Eloquent ORM)
 - ✅ XSS Protection (Blade templating)
 - ✅ Password Hashing (Bcrypt)
 - ✅ API Token Authentication (Sanctum)
-- ✅ Role-based Authorization (Policies)
-- ✅ Soft Deletes (Data retention)
-- ✅ Activity Logging (Audit trail)
+- ✅ Role-based Authorization (Laravel Policies)
+- ✅ Soft Deletes (Data retention for audit)
+- ✅ Activity Logging (Complete audit trail with IP tracking)
+- ✅ Input Validation (Form requests)
+- ✅ Rate Limiting (API endpoints)
 
 ---
 
 ## 🚀 Quick Start Commands
 ```bash
-# Fresh installation
+# Fresh installation with sample data
 php artisan migrate:fresh --seed
 
 # Clear all caches
 php artisan optimize:clear
 
+# Or clear individually
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+
 # Start development server
 php artisan serve
 
-# Run tests
-php artisan test
+# Check routes
+php artisan route:list
 
-# Generate IDE helper files
-php artisan ide-helper:generate
-php artisan ide-helper:models
+# Run tests (if implemented)
+php artisan test
 ```
 
 ---
 
-## 📝 API Endpoints
+## 📝 Complete API Endpoints
 
 ### Authentication
-- `POST /api/login` - Login and get token
-- `POST /api/logout` - Logout
-- `GET /api/me` - Get current user
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/login` | Login and get token | No |
+| POST | `/api/logout` | Logout and revoke token | Yes |
+| GET | `/api/me` | Get current user info | Yes |
 
 ### Employees
-- `GET /api/employees` - List employees
-- `GET /api/employees/{id}` - Get employee details
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/employees` | List employees | Yes |
+| GET | `/api/employees/{id}` | Get employee details | Yes |
 
 ### Attendance
-- `GET /api/attendances` - Get attendance history
-- `GET /api/attendances/today` - Get today's attendance
-- `POST /api/attendances/check-in` - Check in
-- `POST /api/attendances/check-out` - Check out
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/attendances` | Get attendance history | Yes |
+| GET | `/api/attendances/today` | Get today's attendance | Yes |
+| POST | `/api/attendances/check-in` | Check in | Yes |
+| POST | `/api/attendances/check-out` | Check out | Yes |
 
 ### Leave Applications
-- `GET /api/leaves` - Get leave applications
-- `POST /api/leaves` - Apply for leave
-- `GET /api/leave-types` - Get leave types
-- `GET /api/leave-balance` - Get leave balance
+| Method | Endpoint | Description | Auth Required | Notes |
+|--------|----------|-------------|---------------|-------|
+| GET | `/api/leaves` | Get leave applications | Yes | Own leaves only |
+| GET | `/api/leaves/{id}` | Get single leave | Yes | Own leaves only |
+| POST | `/api/leaves` | Apply for leave | Yes | - |
+| PUT | `/api/leaves/{id}` | Update leave | Yes | Pending only |
+| DELETE | `/api/leaves/{id}` | Delete leave | Yes | Pending only |
+| POST | `/api/leaves/{id}/cancel` | Cancel approved leave | Yes | Not started only |
+| GET | `/api/leave-types` | Get leave types | Yes | - |
+| GET | `/api/leave-balance` | Get leave balance | Yes | - |
+| GET | `/api/leaves/calendar/approved` | Get approved leaves (all) | Yes | Calendar view |
 
 ---
 
-## 🎨 Screenshots Guide
+## 👥 Detailed Permission Matrix
 
-To see the application in action:
+### Leave Application Permissions
 
-1. **Login Page**: Clean, modern authentication
-2. **Admin Dashboard**: Comprehensive statistics and quick actions
-3. **Employee Dashboard**: Personal leave balance and attendance
-4. **Leave Application**: Simple, intuitive form with validation
-5. **Attendance Tracking**: Visual status indicators and reports
-6. **Calendar View**: Interactive event calendar
-7. **Profile Management**: Photo upload and personal details
+| Action | Employee (Own) | Employee (Others) | Manager (Dept) | Manager (Other Dept) | Admin |
+|--------|---------------|-------------------|----------------|---------------------|-------|
+| **View List** | ✅ Own only | ❌ | ✅ Dept only | ❌ | ✅ All |
+| **View Details** | ✅ Own | ❌ | ✅ Dept only | ❌ | ✅ All |
+| **View Calendar (Approved)** | ✅ All approved | ✅ All approved | ✅ All approved | ✅ All approved | ✅ All approved |
+| **Apply/Create** | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **Edit** | ✅ Pending only | ❌ | ❌ | ❌ | ❌ |
+| **Delete** | ✅ Pending only | ❌ | ❌ | ❌ | ❌ |
+| **Cancel** | ✅ Approved (not started) | ❌ | ❌ | ❌ | ❌ |
+| **Approve** | ❌ | ❌ | ✅ Pending only | ❌ | ❌ |
+| **Reject** | ❌ | ❌ | ✅ Pending only | ❌ | ❌ |
 
----
-
-## 👥 Team Roles & Permissions
+### Other Module Permissions
 
 | Feature | Admin | Manager | Employee |
 |---------|-------|---------|----------|
-| View Dashboard | ✅ | ✅ | ✅ |
-| Manage Employees | ✅ | ✅ (Dept) | ❌ |
-| Manage Departments | ✅ | ❌ | ❌ |
-| Apply Leave | ✅ | ✅ | ✅ |
-| Approve/Reject Leave | ✅ | ✅ (Dept) | ❌ |
-| View All Attendance | ✅ | ✅ (Dept) | Own Only |
-| Generate Attendance | ✅ | ❌ | ❌ |
-| Manage Events | ✅ | ❌ | ❌ |
-| View Reports | ✅ | ✅ (Dept) | Own Only |
+| **Dashboard** | ✅ Full stats | ✅ Dept stats | ✅ Own stats |
+| **Employees - View** | ✅ All | ✅ Dept only | ❌ |
+| **Employees - Create** | ✅ | ❌ | ❌ |
+| **Employees - Edit** | ✅ | ❌ | Own profile only |
+| **Employees - Delete** | ✅ | ❌ | ❌ |
+| **Departments - View** | ✅ | ✅ | ✅ |
+| **Departments - Manage** | ✅ | ❌ | ❌ |
+| **Attendance - View** | ✅ All | ✅ Dept | Own only |
+| **Attendance - Create** | ✅ | ✅ | ❌ |
+| **Attendance - Edit** | ✅ | ❌ | ❌ |
+| **Attendance - Generate** | ✅ | ❌ | ❌ |
+| **Attendance - Check-in/out** | ✅ | ✅ | ✅ |
+| **Events - View** | ✅ | ✅ | ✅ |
+| **Events - Manage** | ✅ | ❌ | ❌ |
+| **Reports** | ✅ All | ✅ Dept | Own only |
 
 ---
 
-## 🔄 System Workflow
+## 🔄 Complete System Workflows
 
-### Leave Application Workflow
+### Leave Application Workflow (Detailed)
 ```
-Employee applies for leave
-    ↓
-Email sent to Employee (confirmation)
-    ↓
-Email sent to Manager (approval request)
-    ↓
-Manager reviews application
-    ↓
-Manager approves/rejects
-    ↓
-Leave balance deducted (if approved)
-    ↓
-Email sent to Employee (result)
-    ↓
-Attendance auto-updated (if approved)
+1. Employee applies for leave
+   Status: PENDING
+   ↓
+2. System validates:
+   - Sufficient leave balance?
+   - No overlapping leaves?
+   - Excludes weekends & holidays
+   ↓
+3. Email notifications sent:
+   - To Employee: "Application submitted"
+   - To Manager: "New application requires approval"
+   ↓
+4. Employee can:
+   - Edit (change dates, type, reason)
+   - Delete (remove application)
+   ↓
+5. Manager reviews and decides:
+   
+   Option A: APPROVE
+   - Leave balance deducted
+   - Attendance records created (status: on_leave)
+   - Email sent to employee
+   Status: APPROVED
+   
+   Employee can now:
+   - Cancel (if not started yet)
+     → Restores leave balance
+     → Removes attendance records
+     → Status changes to CANCELLED
+   
+   Option B: REJECT
+   - Must provide reason
+   - No balance deduction (never deducted)
+   - Email sent to employee with reason
+   Status: REJECTED
+   
+   Employee must:
+   - Apply new leave (cannot edit rejected)
 ```
 
-### Attendance Workflow
+### Attendance Workflow (Detailed)
 ```
-Employee checks in (Web/Mobile)
-    ↓
-System validates (not holiday, not on leave)
-    ↓
-Determines status (present/late based on time)
-    ↓
-Records check-in time
-    ↓
-Activity logged
-    ↓
-Employee checks out
-    ↓
-System records check-out time
-    ↓
-Attendance record complete
+1. Employee checks in (Web/Mobile API)
+   ↓
+2. System validates:
+   - Not a holiday?
+   - Not on approved leave?
+   - Not already checked in today?
+   ↓
+3. Determines status:
+   - Before 9:00 AM → "present"
+   - After 9:00 AM → "late"
+   ↓
+4. Records check-in time
+   ↓
+5. Activity logged (audit trail)
+   ↓
+6. Employee checks out
+   ↓
+7. System validates:
+   - Already checked in?
+   - Not already checked out?
+   ↓
+8. Records check-out time
+   ↓
+9. Attendance record complete
+```
+
+### Email Notification Workflow
+```
+Trigger Events:
+├── Leave Applied
+│   └── Sends to: Employee (confirmation) + Manager (approval request)
+├── Leave Approved
+│   └── Sends to: Employee (approval confirmation)
+├── Leave Rejected
+│   └── Sends to: Employee (rejection notice with reason)
+└── Leave Cancelled
+    └── Sends to: Employee (cancellation confirmation)
+
+Each email includes:
+- Employee details
+- Leave type and dates
+- Total days
+- Current status
+- Relevant notes
+- Action button (link to view)
 ```
 
 ---
@@ -598,15 +1064,20 @@ Attendance record complete
 
 Potential features for future versions:
 
-- [ ] Payroll integration
-- [ ] Document management
-- [ ] Performance reviews
-- [ ] Shift scheduling
-- [ ] Mobile app (React Native)
-- [ ] Real-time notifications (Pusher)
-- [ ] Advanced reporting (Charts.js)
-- [ ] Export to Excel/PDF
-- [ ] Multi-language support
+- [ ] Payroll integration with leave deductions
+- [ ] Document management (upload contracts, certificates)
+- [ ] Performance reviews and appraisals
+- [ ] Shift scheduling and roster management
+- [ ] Mobile app (React Native / Flutter)
+- [ ] Real-time notifications (Pusher/WebSockets)
+- [ ] Advanced reporting with charts (Chart.js)
+- [ ] Export to Excel/PDF (Laravel Excel)
+- [ ] Multi-language support (i18n)
 - [ ] Dark mode theme
+- [ ] Two-factor authentication (2FA)
+- [ ] Biometric attendance (fingerprint/face recognition)
+- [ ] Leave carry-forward policy
+- [ ] Overtime tracking
+- [ ] Training and development module
 
 ---

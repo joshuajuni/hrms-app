@@ -9,9 +9,12 @@ use App\Services\AttendanceService;
 use Illuminate\Http\Request;
 use App\Helpers\ActivityLogger;
 use App\Notifications\LeaveApplicationNotification;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class LeaveApplicationController extends Controller
 {
+    use AuthorizesRequests;
+
     protected $leaveService;
     protected $attendanceService;
 
@@ -207,6 +210,39 @@ class LeaveApplicationController extends Controller
             ->with('success', 'Leave application deleted successfully.');
     }
 
+    /**
+     * Cancel approved leave
+     */
+    public function cancel(LeaveApplication $leave)
+    {
+        $this->authorize('cancel', $leave);
+
+        // Restore leave balance
+        $this->leaveService->restoreLeaveBalance($leave);
+
+        // Update status
+        $leave->update([
+            'status' => 'cancelled',
+        ]);
+
+        // Remove attendance records
+        $attendances = \App\Models\Attendance::where('employee_id', $leave->employee_id)
+            ->whereBetween('date', [$leave->start_date, $leave->end_date])
+            ->where('status', 'on_leave')
+            ->get();
+
+        foreach ($attendances as $attendance) {
+            $attendance->delete();
+        }
+
+        ActivityLogger::log('cancelled', "Cancelled approved leave application", $leave);
+
+        // Send notification to employee
+        $leave->employee->user->notify(new LeaveApplicationNotification($leave, 'cancelled'));
+
+        return back()->with('success', 'Leave application cancelled successfully. Leave balance restored.');
+    }
+
     public function approve(Request $request, LeaveApplication $leave)
     {
         $this->authorize('approve', $leave);
@@ -236,6 +272,15 @@ class LeaveApplicationController extends Controller
 
         // Send notification to employee
         $leave->employee->user->notify(new LeaveApplicationNotification($leave, 'approved'));
+
+        // Notify manager
+        if ($leave->employee->department && $leave->employee->department->managers()->count() > 0) {
+            foreach ($leave->employee->department->managers as $manager) {
+                if ($manager->id !== auth()->user()->employee->id) {
+                    $manager->user->notify(new LeaveApplicationNotification($leave, 'approved'));
+                }
+            }
+        }
 
         return back()->with('success', 'Leave application approved successfully. Email notification sent to employee.');
     }

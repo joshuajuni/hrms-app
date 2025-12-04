@@ -13,7 +13,7 @@ class LeaveApplicationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // All authenticated users (filtered in controller)
+        return $user->employee !== null;
     }
 
     /**
@@ -21,18 +21,18 @@ class LeaveApplicationPolicy
      */
     public function view(User $user, LeaveApplication $leaveApplication): bool
     {
-        // Admin can view all
-        if ($user->isAdmin()) {
+        // Employee can view only OWN leaves
+        if ($user->employee && $user->employee->id === $leaveApplication->employee_id) {
             return true;
         }
-
-        // Manager can view leaves from their department
-        if ($user->isManager() && $user->employee && $user->employee->is_department_manager) {
+        
+        // Manager can view department leaves
+        if ($user->isManager() && $user->employee) {
             return $leaveApplication->employee->department_id === $user->employee->department_id;
         }
-
-        // Employees can view their own leaves
-        return $user->employee && $user->employee->id === $leaveApplication->employee_id;
+        
+        // Admin can view all
+        return $user->isAdmin();
     }
 
     /**
@@ -48,13 +48,12 @@ class LeaveApplicationPolicy
      */
     public function update(User $user, LeaveApplication $leaveApplication): bool
     {
-        // Only pending leaves can be updated
-        if ($leaveApplication->status !== 'pending') {
-            return false;
+        // Only employee can edit their OWN PENDING leaves
+        if ($user->employee && $user->employee->id === $leaveApplication->employee_id) {
+            return $leaveApplication->status === 'pending';
         }
-
-        // Only the applicant can update their own leave
-        return $user->employee && $user->employee->id === $leaveApplication->employee_id;
+        
+        return false;
     }
 
     /**
@@ -62,13 +61,25 @@ class LeaveApplicationPolicy
      */
     public function delete(User $user, LeaveApplication $leaveApplication): bool
     {
-        // Only pending leaves can be deleted
-        if ($leaveApplication->status !== 'pending') {
-            return false;
+        // Employee can delete their own PENDING leaves
+        if ($user->employee && $user->employee->id === $leaveApplication->employee_id) {
+            return $leaveApplication->status === 'pending';
         }
+        
+        return false;
+    }
 
-        return $user->isAdmin() || 
-               ($user->employee && $user->employee->id === $leaveApplication->employee_id);
+    /**
+     * Determine whether the user can cancel approved leave.
+     */
+    public function cancel(User $user, LeaveApplication $leaveApplication): bool
+    {
+        // Employee can cancel their OWN APPROVED leaves if not started yet
+        if ($user->employee && $user->employee->id === $leaveApplication->employee_id) {
+            return $leaveApplication->canBeCancelled();
+        }
+        
+        return false;
     }
 
     /**
@@ -81,16 +92,11 @@ class LeaveApplicationPolicy
             return false;
         }
 
-        // Admin can approve all
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        // Manager can approve leaves from their department
-        if ($user->isManager() && $user->employee && $user->employee->is_department_manager) {
+        // Manager can approve department leaves
+        if ($user->isManager() && $user->employee) {
             return $leaveApplication->employee->department_id === $user->employee->department_id;
         }
-
+        
         return false;
     }
 

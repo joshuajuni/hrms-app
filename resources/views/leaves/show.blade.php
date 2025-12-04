@@ -94,6 +94,17 @@
                         </a>
                         @endcan
 
+                        @can('delete', $leave)
+                        <form action="{{ route('leaves.destroy', $leave) }}" method="POST" class="d-inline"
+                            onsubmit="return confirm('Are you sure you want to delete this leave application?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>Delete
+                            </button>
+                        </form>
+                        @endcan
+
                         @can('approve', $leave)
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
                             <i class="bi bi-check-circle me-2"></i>Approve
@@ -106,6 +117,16 @@
                         </button>
                         @endcan
                     @endif
+
+                    @can('cancel', $leave)
+                    <form action="{{ route('leaves.cancel', $leave) }}" method="POST" class="d-inline"
+                        onsubmit="return confirm('Are you sure you want to cancel this approved leave? Your leave balance will be restored.');">
+                        @csrf
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-x-circle me-2"></i>Cancel Leave
+                        </button>
+                    </form>
+                    @endcan
                 </div>
             </div>
         </div>

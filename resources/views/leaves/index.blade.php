@@ -23,6 +23,7 @@
                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
                     <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                 </select>
             </div>
             <div class="col-md-2 d-flex align-items-end">
@@ -75,36 +76,49 @@
                                 <span class="badge bg-warning">Pending</span>
                             @elseif($leave->status === 'approved')
                                 <span class="badge bg-success">Approved</span>
-                            @else
+                            @elseif($leave->status === 'rejected')
                                 <span class="badge bg-danger">Rejected</span>
+                            @else
+                                <span class="badge bg-secondary">Cancelled</span>
                             @endif
                         </td>
                         <td>
                             <div class="btn-group" role="group">
+                                @can('view', $leave)
                                 <a href="{{ route('leaves.show', $leave) }}" 
-                                   class="btn btn-sm btn-outline-info">
+                                class="btn btn-sm btn-outline-info" title="View">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                @if($leave->status === 'pending')
-                                    @can('update', $leave)
-                                    <a href="{{ route('leaves.edit', $leave) }}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    @endcan
-                                    @can('delete', $leave)
-                                    <form action="{{ route('leaves.destroy', $leave) }}" 
-                                          method="POST" 
-                                          class="d-inline"
-                                          onsubmit="return confirm('Are you sure you want to delete this leave application?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    @endcan
-                                @endif
+                                @endcan
+                                @can('update', $leave)
+                                <a href="{{ route('leaves.edit', $leave) }}" 
+                                class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                @endcan
+                                @can('delete', $leave)
+                                <form action="{{ route('leaves.destroy', $leave) }}" 
+                                    method="POST" 
+                                    class="d-inline"
+                                    onsubmit="return confirm('Are you sure you want to delete this leave application?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                @endcan
+                                @can('cancel', $leave)
+                                <form action="{{ route('leaves.cancel', $leave) }}" 
+                                    method="POST" 
+                                    class="d-inline"
+                                    onsubmit="return confirm('Are you sure you want to cancel this approved leave? Your leave balance will be restored.');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Cancel Leave">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
+                                @endcan
                             </div>
                         </td>
                     </tr>
