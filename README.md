@@ -319,39 +319,6 @@ Visit: **http://localhost:8000**
    Step 7: Check Mailpit → See approval email to employee
 ```
 
-### Using Real Email (Gmail - Optional)
-
-1. **Update `.env`**
-```env
-   MAIL_MAILER=smtp
-   MAIL_HOST=smtp.gmail.com
-   MAIL_PORT=587
-   MAIL_USERNAME=your-email@gmail.com
-   MAIL_PASSWORD=your-app-password
-   MAIL_ENCRYPTION=tls
-   MAIL_FROM_ADDRESS="your-email@gmail.com"
-   MAIL_FROM_NAME="${APP_NAME}"
-```
-
-2. **Get Gmail App Password**
-   - Go to Google Account → Security
-   - Enable 2-Step Verification
-   - Generate App Password
-   - Use that password in `.env`
-
-3. **Clear Cache**
-```bash
-   php artisan config:clear
-   php artisan cache:clear
-```
-
-4. **Test Again**
-   - Apply for leave
-   - **Check your inbox** (might go to spam first time)
-   - Check spam/promotions folder if not in inbox
-
----
-
 ## 🔌 API Testing
 
 ### 1. **Get Access Token**
@@ -450,38 +417,6 @@ Authorization: Bearer 1|abc123xyz...
 - Employee → Leave Applications (One-to-Many)
 - Employee → Attendances (One-to-Many)
 - Leave Application → Leave Type (Many-to-One)
-
----
-
-## 🐛 Troubleshooting
-
-### Issue: "SQLSTATE[HY000] [2002] Connection refused"
-**Solution**: Make sure MySQL is running
-```bash
-# Check MySQL status in Laragon
-# Or restart Laragon
-```
-
-### Issue: "Class 'PDO' not found"
-**Solution**: Enable PHP extensions
-```ini
-# In php.ini, uncomment:
-extension=pdo_mysql
-```
-
-### Issue: "Storage link not found"
-**Solution**: Create storage link
-```bash
-php artisan storage:link
-```
-
-### Issue: "Emails not sending"
-**Solution**: Check Mailpit is running
-- Access: http://localhost:8025
-- If using Laragon, Mailpit starts automatically
-
-### Issue: "PHP 8.5 Deprecation Warnings"
-**Solution**: Already fixed in `config/database.php`
 
 ---
 
@@ -659,32 +594,6 @@ Attendance record complete
 
 ---
 
-## 📞 Support & Contact
-
-For issues, questions, or contributions:
-
-- **GitHub Issues**: [Create an issue](https://github.com/YOUR_USERNAME/laravel-hrms/issues)
-- **Email**: your-email@example.com
-- **Documentation**: This README file
-
----
-
-## 📄 License
-
-This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
----
-
-## 🙏 Acknowledgments
-
-- **Laravel Framework** - The PHP framework for web artisans
-- **Bootstrap** - The world's most popular front-end toolkit
-- **FullCalendar** - The most popular JavaScript calendar
-- **Laravel Breeze** - Minimal, simple authentication scaffolding
-- **Laravel Sanctum** - API authentication made simple
-
----
-
 ## 📈 Future Enhancements
 
 Potential features for future versions:
@@ -699,9 +608,5 @@ Potential features for future versions:
 - [ ] Export to Excel/PDF
 - [ ] Multi-language support
 - [ ] Dark mode theme
-
----
-
-**Built with ❤️ using Laravel 12**
 
 ---
