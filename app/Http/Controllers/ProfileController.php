@@ -2,15 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Laravel\Facades\Image;
 use App\Helpers\ActivityLogger;
 
 class ProfileController extends Controller
@@ -23,9 +17,6 @@ class ProfileController extends Controller
         return view('profile.show', compact('user', 'employee'));
     }
 
-    /**
-     * Display the user's profile form.
-     */
     public function edit()
     {
         $user = auth()->user();
@@ -34,9 +25,6 @@ class ProfileController extends Controller
         return view('profile.edit', compact('user', 'employee'));
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(Request $request)
     {
         $user = auth()->user();
@@ -49,8 +37,11 @@ class ProfileController extends Controller
             'date_of_birth' => 'nullable|date',
             'gender' => 'nullable|in:male,female,other',
             'address' => 'nullable|string',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
+
+        // dd($validated);
+
 
         // Update user
         $user->update([
@@ -59,30 +50,25 @@ class ProfileController extends Controller
         ]);
 
         // Handle photo upload
-        if ($request->hasFile('photo')) {
-            // Delete old photo
-            if ($employee->photo) {
+        if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
+            // Delete old photo if exists
+            if ($employee && $employee->photo && Storage::disk('public')->exists($employee->photo)) {
                 Storage::disk('public')->delete($employee->photo);
             }
 
-            $photo = $request->file('photo');
-            $filename = 'employee_' . time() . '.' . $photo->getClientOriginalExtension();
-            
-            $image = Image::read($photo);
-            $image->scale(width: 400);
-            $image->save(storage_path('app/public/employees/' . $filename));
-            
-            $validated['photo'] = 'employees/' . $filename;
+            $validated['photo'] = $request->file('photo')->store('employees', 'public');
         }
 
-        // Update employee
-        $employee->update([
-            'phone' => $validated['phone'] ?? $employee->phone,
-            'date_of_birth' => $validated['date_of_birth'] ?? $employee->date_of_birth,
-            'gender' => $validated['gender'] ?? $employee->gender,
-            'address' => $validated['address'] ?? $employee->address,
-            'photo' => $validated['photo'] ?? $employee->photo,
-        ]);
+        // Update employee only if exists
+        if ($employee) {
+            $employee->update([
+                'phone' => $validated['phone'] ?? $employee->phone,
+                'date_of_birth' => $validated['date_of_birth'] ?? $employee->date_of_birth,
+                'gender' => $validated['gender'] ?? $employee->gender,
+                'address' => $validated['address'] ?? $employee->address,
+                'photo' => $validated['photo'] ?? $employee->photo,
+            ]);
+        }
 
         ActivityLogger::log('updated', "Updated own profile");
 
