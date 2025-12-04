@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Services\AttendanceService;
 use Illuminate\Http\Request;
+use App\Helpers\ActivityLogger;
 
 class AttendanceController extends Controller
 {
@@ -84,6 +85,10 @@ class AttendanceController extends Controller
 
         $result = $this->attendanceService->checkIn($employee, $request->input('notes'));
 
+        if ($result['success']) {
+            ActivityLogger::log('api_check_in', "Checked in via mobile app", $result['attendance']);
+        }
+
         return response()->json($result, $result['success'] ? 200 : 400);
     }
 
@@ -95,6 +100,10 @@ class AttendanceController extends Controller
         $employee = auth()->user()->employee;
 
         $result = $this->attendanceService->checkOut($employee, $request->input('notes'));
+
+        if ($result['success']) {
+            ActivityLogger::log('api_check_out', "Checked out via mobile app", $result['attendance']);
+        }
 
         return response()->json($result, $result['success'] ? 200 : 400);
     }

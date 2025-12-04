@@ -8,6 +8,7 @@ use App\Services\LeaveService;
 use App\Services\AttendanceService;
 use Illuminate\Http\Request;
 use App\Helpers\ActivityLogger;
+use App\Notifications\LeaveApplicationNotification;
 
 class LeaveApplicationController extends Controller
 {
@@ -110,8 +111,17 @@ class LeaveApplicationController extends Controller
 
         ActivityLogger::log('created', "Applied for leave: {$leaveType->name}", $leaveApplication);
 
-        return redirect()->route('leaves.index')
-            ->with('success', 'Leave application submitted successfully.');
+        // Send notification to employee
+        $employee->user->notify(new LeaveApplicationNotification($leaveApplication, 'submitted'));
+
+        // Send notification to manager/admin
+        if ($employee->department && $employee->department->managers()->count() > 0) {
+            foreach ($employee->department->managers as $manager) {
+                $manager->user->notify(new LeaveApplicationNotification($leaveApplication, 'new_application'));
+            }
+        }
+
+        return redirect()->route('leaves.index')->with('success', 'Leave application submitted successfully. Email notification sent.');
     }
 
     /**
@@ -224,7 +234,10 @@ class LeaveApplicationController extends Controller
 
         ActivityLogger::log('approved', "Approved leave application", $leave);
 
-        return back()->with('success', 'Leave application approved successfully.');
+        // Send notification to employee
+        $leave->employee->user->notify(new LeaveApplicationNotification($leave, 'approved'));
+
+        return back()->with('success', 'Leave application approved successfully. Email notification sent to employee.');
     }
 
     public function reject(Request $request, LeaveApplication $leave)
@@ -244,6 +257,9 @@ class LeaveApplicationController extends Controller
 
         ActivityLogger::log('rejected', "Rejected leave application", $leave);
 
-        return back()->with('success', 'Leave application rejected.');
+        // Send notification to employee
+        $leave->employee->user->notify(new LeaveApplicationNotification($leave, 'rejected'));
+
+        return back()->with('success', 'Leave application rejected. Email notification sent to employee.');
     }
 }

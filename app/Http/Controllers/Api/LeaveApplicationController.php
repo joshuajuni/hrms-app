@@ -7,6 +7,8 @@ use App\Models\LeaveApplication;
 use App\Models\LeaveType;
 use App\Services\LeaveService;
 use Illuminate\Http\Request;
+use App\Helpers\ActivityLogger;
+use App\Notifications\LeaveApplicationNotification;
 
 class LeaveApplicationController extends Controller
 {
@@ -103,11 +105,24 @@ class LeaveApplicationController extends Controller
             'status' => 'pending',
         ]);
 
+        ActivityLogger::log('api_leave_applied', "Applied for leave via mobile app: {$leaveType->name}", $leaveApplication);
+
+        // Send notification to employee
+        $employee->user->notify(new LeaveApplicationNotification($leaveApplication, 'submitted'));
+
+        // Send notification to manager/admin
+        if ($employee->department && $employee->department->managers()->count() > 0) {
+            foreach ($employee->department->managers as $manager) {
+                $manager->user->notify(new LeaveApplicationNotification($leaveApplication, 'new_application'));
+            }
+        }
+
         return response()->json([
-            'message' => 'Leave application submitted successfully.',
+            'message' => 'Leave application submitted successfully. Email notification sent.',
             'leave' => [
                 'id' => $leaveApplication->id,
                 'status' => $leaveApplication->status,
+                'total_days' => $leaveApplication->total_days,
             ]
         ], 201);
     }

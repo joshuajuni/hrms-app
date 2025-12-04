@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Helpers\ActivityLogger;
 
 class AuthController extends Controller
 {
@@ -23,12 +24,16 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
+            ActivityLogger::log('failed_login', "Failed login attempt for: {$request->email}");
+            
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
         if (!$user->is_active) {
+            ActivityLogger::log('inactive_login_attempt', "Inactive user login attempt: {$user->email}");
+            
             return response()->json([
                 'message' => 'Your account is inactive. Please contact administrator.'
             ], 403);
@@ -39,6 +44,8 @@ class AuthController extends Controller
 
         // Create new token
         $token = $user->createToken('mobile-app')->plainTextToken;
+
+        ActivityLogger::log('api_login', "API login successful via mobile app");
 
         return response()->json([
             'message' => 'Login successful',
@@ -65,6 +72,8 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        ActivityLogger::log('api_logout', "API logout via mobile app");
+        
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([

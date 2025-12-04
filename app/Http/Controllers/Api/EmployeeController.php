@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Helpers\ActivityLogger;
 
 class EmployeeController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Get list of employees
      */
@@ -42,6 +46,8 @@ class EmployeeController extends Controller
             ];
         });
 
+        ActivityLogger::log('api_view_employees', "Viewed employee list via API");
+
         return response()->json([
             'employees' => $employees
         ]);
@@ -53,6 +59,8 @@ class EmployeeController extends Controller
     public function show(Employee $employee)
     {
         $this->authorize('view', $employee);
+
+        ActivityLogger::log('api_view_employee', "Viewed employee details via API: {$employee->full_name}", $employee);
 
         return response()->json([
             'employee' => [
