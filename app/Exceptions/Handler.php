@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Illuminate\Auth\Access\AuthorizationException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -49,6 +50,17 @@ class Handler extends ExceptionHandler
     {
         // Authorization/Forbidden errors (403)
         if ($e instanceof AccessDeniedHttpException) {
+            return response()->json([
+                'error' => [
+                    'message' => $this->getAuthorizationMessage($request),
+                    'type' => 'authorization_error',
+                    'code' => 'FORBIDDEN',
+                    'status' => 403
+                ]
+            ], 403);
+        }
+
+        if ($e instanceof AuthorizationException) {
             return response()->json([
                 'error' => [
                     'message' => $this->getAuthorizationMessage($request),
