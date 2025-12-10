@@ -119,67 +119,67 @@ class EmployeeController extends Controller
         return view('employees.edit', compact('employee', 'departments', 'roles'));
     }
 
-public function update(Request $request, Employee $employee)
-{
-    $this->authorize('update', $employee);
+    public function update(Request $request, Employee $employee)
+    {
+        $this->authorize('update', $employee);
 
-    $validated = $request->validate([
-        'email' => 'required|email|unique:users,email,' . $employee->user_id,
-        'role_id' => 'required|exists:roles,id',
-        'first_name' => 'required|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'department_id' => 'nullable|exists:departments,id',
-        'phone' => 'nullable|string|max:20',
-        'date_of_birth' => 'nullable|date',
-        'gender' => 'nullable|in:male,female,other',
-        'address' => 'nullable|string',
-        'position' => 'nullable|string|max:255',
-        'join_date' => 'required|date',
-        'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-        'is_department_manager' => 'boolean',
-        'annual_leave_balance' => 'nullable|numeric|min:0',
-        'sick_leave_balance' => 'nullable|numeric|min:0',
-    ]);
+        $validated = $request->validate([
+            'email' => 'required|email|unique:users,email,' . $employee->user_id,
+            'role_id' => 'required|exists:roles,id',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'department_id' => 'nullable|exists:departments,id',
+            'phone' => 'nullable|string|max:20',
+            'date_of_birth' => 'nullable|date',
+            'gender' => 'nullable|in:male,female,other',
+            'address' => 'nullable|string',
+            'position' => 'nullable|string|max:255',
+            'join_date' => 'required|date',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'is_department_manager' => 'boolean',
+            'annual_leave_balance' => 'nullable|numeric|min:0',
+            'sick_leave_balance' => 'nullable|numeric|min:0',
+        ]);
 
-    // Update user
-    $employee->user->update([
-        'name' => $validated['first_name'] . ' ' . $validated['last_name'],
-        'email' => $validated['email'],
-        'role_id' => $validated['role_id'],
-    ]);
+        // Update user
+        $employee->user->update([
+            'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+            'email' => $validated['email'],
+            'role_id' => $validated['role_id'],
+        ]);
 
-    // Handle photo upload
-    if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
-        // Delete old photo if exists
-        if ($employee->photo && Storage::disk('public')->exists($employee->photo)) {
-            Storage::disk('public')->delete($employee->photo);
+        // Handle photo upload
+        if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
+            // Delete old photo if exists
+            if ($employee->photo && Storage::disk('public')->exists($employee->photo)) {
+                Storage::disk('public')->delete($employee->photo);
+            }
+
+            $validated['photo'] = $request->file('photo')->store('employees', 'public');
         }
 
-        $validated['photo'] = $request->file('photo')->store('employees', 'public');
+        // Update employee
+        $employee->update([
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'department_id' => $validated['department_id'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'gender' => $validated['gender'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'position' => $validated['position'] ?? null,
+            'join_date' => $validated['join_date'],
+            'photo' => $validated['photo'] ?? $employee->photo,
+            'is_department_manager' => $request->boolean('is_department_manager'),
+            'annual_leave_balance' => $validated['annual_leave_balance'] ?? $employee->annual_leave_balance,
+            'sick_leave_balance' => $validated['sick_leave_balance'] ?? $employee->sick_leave_balance,
+        ]);
+
+        ActivityLogger::log('updated', "Updated employee: {$employee->full_name}", $employee);
+
+        return redirect()->route('employees.index')
+            ->with('success', 'Employee updated successfully.');
     }
-
-    // Update employee
-    $employee->update([
-        'first_name' => $validated['first_name'],
-        'last_name' => $validated['last_name'],
-        'department_id' => $validated['department_id'] ?? null,
-        'phone' => $validated['phone'] ?? null,
-        'date_of_birth' => $validated['date_of_birth'] ?? null,
-        'gender' => $validated['gender'] ?? null,
-        'address' => $validated['address'] ?? null,
-        'position' => $validated['position'] ?? null,
-        'join_date' => $validated['join_date'],
-        'photo' => $validated['photo'] ?? $employee->photo,
-        'is_department_manager' => $request->boolean('is_department_manager'),
-        'annual_leave_balance' => $validated['annual_leave_balance'] ?? $employee->annual_leave_balance,
-        'sick_leave_balance' => $validated['sick_leave_balance'] ?? $employee->sick_leave_balance,
-    ]);
-
-    ActivityLogger::log('updated', "Updated employee: {$employee->full_name}", $employee);
-
-    return redirect()->route('employees.index')
-        ->with('success', 'Employee updated successfully.');
-}
 
     public function destroy(Employee $employee)
     {
