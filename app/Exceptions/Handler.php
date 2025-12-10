@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
-use Illuminate\Auth\Access\AuthorizationException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -50,17 +49,6 @@ class Handler extends ExceptionHandler
     {
         // Authorization/Forbidden errors (403)
         if ($e instanceof AccessDeniedHttpException) {
-            return response()->json([
-                'error' => [
-                    'message' => $this->getAuthorizationMessage($request),
-                    'type' => 'authorization_error',
-                    'code' => 'FORBIDDEN',
-                    'status' => 403
-                ]
-            ], 403);
-        }
-
-        if ($e instanceof AuthorizationException) {
             return response()->json([
                 'error' => [
                     'message' => $this->getAuthorizationMessage($request),
@@ -166,7 +154,7 @@ class Handler extends ExceptionHandler
 
         // Leave application specific messages
         if (str_contains($path, 'api/leaves')) {
-            if ($request->isMethod('GET') && preg_match('/api\/leaves\/\d+/', $path)) {
+            if ($request->isMethod('GET')) {
                 return 'You do not have permission to view this leave application. You can only access your own leave records.';
             }
             if ($request->isMethod('PUT') || $request->isMethod('PATCH')) {
