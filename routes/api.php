@@ -28,14 +28,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Leave Applications
     Route::get('/leaves', [LeaveApplicationController::class, 'index']);
-    Route::get('/leaves/{leave}', [LeaveApplicationController::class, 'show']); // NEW
+    Route::get('/leaves/{leave}', [LeaveApplicationController::class, 'show']);
     Route::post('/leaves', [LeaveApplicationController::class, 'store']);
-    Route::put('/leaves/{leave}', [LeaveApplicationController::class, 'update']); // NEW
-    Route::delete('/leaves/{leave}', [LeaveApplicationController::class, 'destroy']); // NEW
-    Route::post('/leaves/{leave}/cancel', [LeaveApplicationController::class, 'cancel']); // NEW
+    Route::put('/leaves/{leave}', [LeaveApplicationController::class, 'update']);
+    Route::delete('/leaves/{leave}', [LeaveApplicationController::class, 'destroy']);
+    Route::post('/leaves/{leave}/cancel', [LeaveApplicationController::class, 'cancel']);
     Route::get('/leave-types', [LeaveApplicationController::class, 'leaveTypes']);
     Route::get('/leave-balance', [LeaveApplicationController::class, 'balance']);
     
     // Get approved leaves for calendar (all employees)
-    Route::get('/leaves/calendar/approved', [LeaveApplicationController::class, 'approvedCalendar']); // NEW
+    Route::get('/leaves/calendar/approved', [LeaveApplicationController::class, 'approvedCalendar']);
 });

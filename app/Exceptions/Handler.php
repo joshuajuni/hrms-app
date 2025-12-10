@@ -154,7 +154,7 @@ class Handler extends ExceptionHandler
 
         // Leave application specific messages
         if (str_contains($path, 'api/leaves')) {
-            if ($request->isMethod('GET')) {
+            if ($request->isMethod('GET') && preg_match('/api\/leaves\/\d+/', $path)) {
                 return 'You do not have permission to view this leave application. You can only access your own leave records.';
             }
             if ($request->isMethod('PUT') || $request->isMethod('PATCH')) {
