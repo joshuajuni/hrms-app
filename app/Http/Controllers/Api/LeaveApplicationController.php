@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LeaveApplication;
 use App\Models\LeaveType;
 use App\Services\LeaveService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Helpers\ActivityLogger;
 use App\Notifications\LeaveApplicationNotification;
@@ -13,7 +14,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class LeaveApplicationController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, ApiResponse;
 
     protected $leaveService;
 
@@ -58,9 +59,7 @@ class LeaveApplicationController extends Controller
             ];
         });
 
-        return response()->json([
-            'leaves' => $leaves
-        ]);
+        return $this->successResponse($leaves);
     }
 
     /**
@@ -72,36 +71,34 @@ class LeaveApplicationController extends Controller
 
         ActivityLogger::log('api_view_leave', "Viewed leave application via API", $leave);
 
-        return response()->json([
-            'leave' => [
-                'id' => $leave->id,
-                'employee' => [
-                    'id' => $leave->employee->id,
-                    'full_name' => $leave->employee->full_name,
-                    'employee_code' => $leave->employee->employee_code,
-                ],
-                'leave_type' => [
-                    'id' => $leave->leaveType->id,
-                    'name' => $leave->leaveType->name,
-                    'code' => $leave->leaveType->code,
-                ],
-                'start_date' => $leave->start_date->format('Y-m-d'),
-                'end_date' => $leave->end_date->format('Y-m-d'),
-                'total_days' => $leave->total_days,
-                'reason' => $leave->reason,
-                'status' => $leave->status,
-                'approved_by' => $leave->approver ? [
-                    'id' => $leave->approver->id,
-                    'full_name' => $leave->approver->full_name,
-                ] : null,
-                'approved_at' => $leave->approved_at?->format('Y-m-d H:i:s'),
-                'approval_notes' => $leave->approval_notes,
-                'created_at' => $leave->created_at->format('Y-m-d H:i:s'),
-                'can_edit' => $leave->status === 'pending',
-                'can_delete' => $leave->status === 'pending',
-                'can_cancel' => $leave->canBeCancelled(),
-                'has_started' => $leave->hasStarted(),
-            ]
+        return $this->successResponse([
+            'id' => $leave->id,
+            'employee' => [
+                'id' => $leave->employee->id,
+                'full_name' => $leave->employee->full_name,
+                'employee_code' => $leave->employee->employee_code,
+            ],
+            'leave_type' => [
+                'id' => $leave->leaveType->id,
+                'name' => $leave->leaveType->name,
+                'code' => $leave->leaveType->code,
+            ],
+            'start_date' => $leave->start_date->format('Y-m-d'),
+            'end_date' => $leave->end_date->format('Y-m-d'),
+            'total_days' => $leave->total_days,
+            'reason' => $leave->reason,
+            'status' => $leave->status,
+            'approved_by' => $leave->approver ? [
+                'id' => $leave->approver->id,
+                'full_name' => $leave->approver->full_name,
+            ] : null,
+            'approved_at' => $leave->approved_at?->format('Y-m-d H:i:s'),
+            'approval_notes' => $leave->approval_notes,
+            'created_at' => $leave->created_at->format('Y-m-d H:i:s'),
+            'can_edit' => $leave->status === 'pending',
+            'can_delete' => $leave->status === 'pending',
+            'can_cancel' => $leave->canBeCancelled(),
+            'has_started' => $leave->hasStarted(),
         ]);
     }
 
@@ -126,23 +123,26 @@ class LeaveApplicationController extends Controller
         );
 
         if ($totalDays == 0) {
-            return response()->json([
-                'message' => 'Selected dates are all weekends or holidays.'
-            ], 400);
+            return $this->badRequestResponse('Selected dates are all weekends or holidays.');
         }
 
         if (!$this->leaveService->hasSufficientBalance($employee, $leaveType, $totalDays)) {
             return response()->json([
-                'message' => 'Insufficient leave balance.',
-                'current_balance' => $leaveType->code === 'AL' ? $employee->annual_leave_balance : $employee->sick_leave_balance,
-                'required_days' => $totalDays,
+                'error' => [
+                    'message' => 'Insufficient leave balance.',
+                    'type' => 'insufficient_balance_error',
+                    'code' => 'INSUFFICIENT_BALANCE',
+                    'status' => 400,
+                    'details' => [
+                        'current_balance' => $leaveType->code === 'AL' ? $employee->annual_leave_balance : $employee->sick_leave_balance,
+                        'required_days' => $totalDays,
+                    ]
+                ]
             ], 400);
         }
 
         if ($this->leaveService->hasOverlappingLeave($employee, $validated['start_date'], $validated['end_date'])) {
-            return response()->json([
-                'message' => 'You already have a leave application for this period.'
-            ], 400);
+            return $this->badRequestResponse('You already have a leave application for this period.');
         }
 
         $leaveApplication = LeaveApplication::create([
@@ -167,16 +167,13 @@ class LeaveApplicationController extends Controller
             }
         }
 
-        return response()->json([
-            'message' => 'Leave application submitted successfully. Email notification sent.',
-            'leave' => [
-                'id' => $leaveApplication->id,
-                'status' => $leaveApplication->status,
-                'total_days' => $leaveApplication->total_days,
-                'start_date' => $leaveApplication->start_date->format('Y-m-d'),
-                'end_date' => $leaveApplication->end_date->format('Y-m-d'),
-            ]
-        ], 201);
+        return $this->createdResponse([
+            'id' => $leaveApplication->id,
+            'status' => $leaveApplication->status,
+            'total_days' => $leaveApplication->total_days,
+            'start_date' => $leaveApplication->start_date->format('Y-m-d'),
+            'end_date' => $leaveApplication->end_date->format('Y-m-d'),
+        ], 'Leave application submitted successfully. Email notification sent.');
     }
 
     /**
@@ -202,23 +199,26 @@ class LeaveApplicationController extends Controller
         );
 
         if ($totalDays == 0) {
-            return response()->json([
-                'message' => 'Selected dates are all weekends or holidays.'
-            ], 400);
+            return $this->badRequestResponse('Selected dates are all weekends or holidays.');
         }
 
         if (!$this->leaveService->hasSufficientBalance($employee, $leaveType, $totalDays)) {
             return response()->json([
-                'message' => 'Insufficient leave balance.',
-                'current_balance' => $leaveType->code === 'AL' ? $employee->annual_leave_balance : $employee->sick_leave_balance,
-                'required_days' => $totalDays,
+                'error' => [
+                    'message' => 'Insufficient leave balance.',
+                    'type' => 'insufficient_balance_error',
+                    'code' => 'INSUFFICIENT_BALANCE',
+                    'status' => 400,
+                    'details' => [
+                        'current_balance' => $leaveType->code === 'AL' ? $employee->annual_leave_balance : $employee->sick_leave_balance,
+                        'required_days' => $totalDays,
+                    ]
+                ]
             ], 400);
         }
 
         if ($this->leaveService->hasOverlappingLeave($employee, $validated['start_date'], $validated['end_date'], $leave->id)) {
-            return response()->json([
-                'message' => 'You already have a leave application for this period.'
-            ], 400);
+            return $this->badRequestResponse('You already have a leave application for this period.');
         }
 
         $leave->update([
@@ -231,16 +231,13 @@ class LeaveApplicationController extends Controller
 
         ActivityLogger::log('api_leave_updated', "Updated leave application via mobile app", $leave);
 
-        return response()->json([
-            'message' => 'Leave application updated successfully.',
-            'leave' => [
-                'id' => $leave->id,
-                'status' => $leave->status,
-                'total_days' => $leave->total_days,
-                'start_date' => $leave->start_date->format('Y-m-d'),
-                'end_date' => $leave->end_date->format('Y-m-d'),
-            ]
-        ]);
+        return $this->successResponse([
+            'id' => $leave->id,
+            'status' => $leave->status,
+            'total_days' => $leave->total_days,
+            'start_date' => $leave->start_date->format('Y-m-d'),
+            'end_date' => $leave->end_date->format('Y-m-d'),
+        ], 'Leave application updated successfully.');
     }
 
     /**
@@ -254,9 +251,7 @@ class LeaveApplicationController extends Controller
 
         $leave->delete();
 
-        return response()->json([
-            'message' => 'Leave application deleted successfully.'
-        ]);
+        return $this->successResponse(null, 'Leave application deleted successfully.');
     }
 
     /**
@@ -268,9 +263,16 @@ class LeaveApplicationController extends Controller
 
         if (!$leave->canBeCancelled()) {
             return response()->json([
-                'message' => 'This leave cannot be cancelled. Either it has already started or it is not approved.',
-                'status' => $leave->status,
-                'has_started' => $leave->hasStarted(),
+                'error' => [
+                    'message' => 'This leave cannot be cancelled. Either it has already started or it is not approved.',
+                    'type' => 'cannot_cancel_error',
+                    'code' => 'CANNOT_CANCEL_LEAVE',
+                    'status' => 400,
+                    'details' => [
+                        'status' => $leave->status,
+                        'has_started' => $leave->hasStarted(),
+                    ]
+                ]
             ], 400);
         }
 
@@ -297,14 +299,11 @@ class LeaveApplicationController extends Controller
         // Send notification
         $leave->employee->user->notify(new LeaveApplicationNotification($leave, 'cancelled'));
 
-        return response()->json([
-            'message' => 'Leave application cancelled successfully. Leave balance restored.',
-            'leave' => [
-                'id' => $leave->id,
-                'status' => $leave->status,
-                'restored_days' => $leave->total_days,
-            ]
-        ]);
+        return $this->successResponse([
+            'id' => $leave->id,
+            'status' => $leave->status,
+            'restored_days' => $leave->total_days,
+        ], 'Leave application cancelled successfully. Leave balance restored.');
     }
 
     /**
@@ -312,17 +311,14 @@ class LeaveApplicationController extends Controller
      */
     public function approvedCalendar(Request $request)
     {
-        $employee = auth()->user()->employee;
-
-        // Get approved leaves from all employees in the company
-        // or department (based on your requirement)
         $query = LeaveApplication::with(['employee', 'leaveType'])
             ->where('status', 'approved');
 
-        // Optional: Filter by date range
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('start_date', [$request->start_date, $request->end_date])
+            $query->where(function ($q) use ($request) {
+                $q->whereBetween('start_date', [$request->start_date, $request->end_date])
                   ->orWhereBetween('end_date', [$request->start_date, $request->end_date]);
+            });
         }
 
         $leaves = $query->get()->map(function ($leave) {
@@ -343,9 +339,7 @@ class LeaveApplicationController extends Controller
             ];
         });
 
-        return response()->json([
-            'leaves' => $leaves
-        ]);
+        return $this->successResponse($leaves);
     }
 
     /**
@@ -363,9 +357,7 @@ class LeaveApplicationController extends Controller
             ];
         });
 
-        return response()->json([
-            'leave_types' => $leaveTypes
-        ]);
+        return $this->successResponse($leaveTypes);
     }
 
     /**
@@ -375,7 +367,7 @@ class LeaveApplicationController extends Controller
     {
         $employee = auth()->user()->employee;
 
-        return response()->json([
+        return $this->successResponse([
             'annual_leave_balance' => $employee->annual_leave_balance,
             'sick_leave_balance' => $employee->sick_leave_balance,
             'total_leave_balance' => $employee->annual_leave_balance + $employee->sick_leave_balance,

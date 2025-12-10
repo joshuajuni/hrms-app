@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -11,6 +12,8 @@ use App\Helpers\ActivityLogger;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Login and get token
      */
@@ -26,17 +29,13 @@ class AuthController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             ActivityLogger::log('failed_login', "Failed login attempt for: {$request->email}");
             
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            return $this->unauthorizedResponse('The provided credentials are incorrect.');
         }
 
         if (!$user->is_active) {
             ActivityLogger::log('inactive_login_attempt', "Inactive user login attempt: {$user->email}");
             
-            return response()->json([
-                'message' => 'Your account is inactive. Please contact administrator.'
-            ], 403);
+            return $this->forbiddenResponse('Your account is inactive. Please contact administrator.');
         }
 
         // Delete old tokens
@@ -47,9 +46,9 @@ class AuthController extends Controller
 
         ActivityLogger::log('api_login', "API login successful via mobile app");
 
-        return response()->json([
-            'message' => 'Login successful',
+        return $this->successResponse([
             'token' => $token,
+            'token_type' => 'Bearer',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -64,7 +63,7 @@ class AuthController extends Controller
                 'position' => $user->employee->position,
                 'photo' => $user->employee->photo ? asset('storage/' . $user->employee->photo) : null,
             ] : null,
-        ]);
+        ], 'Login successful');
     }
 
     /**
@@ -76,9 +75,7 @@ class AuthController extends Controller
         
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Logout successful'
-        ]);
+        return $this->successResponse(null, 'Logout successful');
     }
 
     /**
@@ -88,7 +85,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        return response()->json([
+        return $this->successResponse([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
